@@ -1,5 +1,3 @@
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -11,7 +9,6 @@ from . import selectors
 from .serializers import LocationSerializer, SpaceFilterSerializer, SpaceSerializer, SpaceWriteSerializer
 
 
-@method_decorator(cache_page(60 * 5), name="get")  # locations rarely change: serve from cache (Redis in Docker)
 class LocationListView(generics.ListAPIView):
     serializer_class = LocationSerializer
     permission_classes = [AllowAny]

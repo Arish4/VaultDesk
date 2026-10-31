@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from .models import Location, Space
@@ -33,7 +35,7 @@ class SpaceWriteSerializer(serializers.ModelSerializer):
         # allow_blank: a stray empty item (e.g. trailing comma) is dropped in validate_amenities, not an error.
         child=serializers.CharField(max_length=40, allow_blank=True), required=False, max_length=MAX_AMENITIES
     )
-    hourly_price = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=0)
+    hourly_price = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=Decimal("0"))
 
     class Meta:
         model = Space

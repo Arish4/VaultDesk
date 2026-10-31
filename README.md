@@ -2,27 +2,27 @@
 
 A facilities app for a coworking / campus operator: a live **room calendar** for every building, booking with
 no double-booking, **manager approvals** for big rooms, **maintenance** tickets that can take a room out of
-service, and email confirmations, reminders and decisions sent in the background.
+service, and email confirmations and decisions.
 
-**Stack:** Django 5 · Django REST Framework · JWT auth · PostgreSQL · Celery + Redis · React 18 (Vite) ·
-Zustand · Bun · Docker Compose · GitHub Actions CI
+**Stack:** Django 5 · Django REST Framework · JWT auth · PostgreSQL · React 18 (Vite) · Zustand · Bun ·
+GitHub Actions CI
 
 ---
 
 ## Features
 
 - **Calendar**: rooms × hours grid per building, with a live "now" line. Click an empty slot to book it, click a booking for details or to cancel. Header stats: rooms in use now, bookings today (pending, out of service), next free room.
-- **Buildings** sidebar filter, kept in the URL (`?building=2`) so it survives refresh and can be shared
+- **Building** filter in the top bar, kept in the URL (`?building=2`) so it survives refresh and can be shared
 - **Rooms** list with type and capacity filters, amenities, approval badges; room page with a day availability bar
 - **Booking rules**: opening hours, no past times, 30 min–12 h, attendees ≤ capacity, room not out of service, **no overlaps**
 - **Race-safe**: two people booking the same slot at the same moment can't both win (`SELECT … FOR UPDATE`)
 - **Approvals**: rooms flagged `requires_approval` create *pending* bookings that hold the slot; managers approve or decline
 - **Room management** (managers): add rooms, edit them, switch "needs approval" on or off, hide a room without losing its history
 - **Maintenance**: anyone can report an issue; managers move it open → in progress → resolved; "blocks booking" issues take the room out of service
-- **Emails via Celery**: confirmation, reminder 30 min before, request received, declined, cancelled
-- JWT auth with token refresh (one shared refresh for parallel 401s); member vs manager roles
+- **Emails**: confirmation, request received, declined, cancelled; sent only after the booking is saved, and a failed email never fails the booking
+- JWT auth with token refresh (one shared refresh for parallel 401s); member vs manager roles; login by username or email, case-insensitive
 - Search box filters rooms everywhere; sidebar badges for upcoming bookings, open issues and pending approvals
-- 52 backend tests + 13 frontend tests, run in CI against real PostgreSQL
+- 61 backend tests + 28 frontend tests, run in CI against real PostgreSQL
 
 ## Frontend state: what lives where
 
@@ -40,7 +40,7 @@ Zustand · Bun · Docker Compose · GitHub Actions CI
 ```
 React (Vite)  ──/api──▶  Django + DRF  ──▶  PostgreSQL
                               │
-                              └──▶ Redis ──▶ Celery worker ──▶ email
+                              └──▶ email (after the database commit)
 ```
 
 Each Django app is split by responsibility:
@@ -59,7 +59,7 @@ Each Django app is split by responsibility:
 
 - **S**ingle responsibility: `BookingService` only holds booking rules. Pricing, notifying, querying and HTTP each live in their own module.
 - **O**pen/closed: new pricing (peak hours, member discounts) = a new `PricingPolicy` class; `BookingService` doesn't change.
-- **L**iskov: any notifier (`CeleryBookingNotifier`, the tests' `FakeNotifier`) can replace another.
+- **L**iskov: any notifier (`EmailBookingNotifier`, the tests' `FakeNotifier`) can replace another; a queue-based or SMS notifier could be added without touching `BookingService`.
 - **I**nterface segregation: small interfaces (`PricingPolicy.price_for`, `BookingNotifier.booking_confirmed/cancelled`).
 - **D**ependency inversion: `BookingService` receives pricing and notifier in its constructor; `dependencies.py` wires the real ones.
 
@@ -86,7 +86,7 @@ All times are stored in UTC and shown in Asia/Kolkata.
 | POST | `/api/auth/token/` | – | Login → access + refresh JWT |
 | POST | `/api/auth/token/refresh/` | – | New access token |
 | GET | `/api/auth/me/` | ✔ | Current user |
-| GET | `/api/locations/` | – | All centres (cached 5 min) |
+| GET | `/api/locations/` | – | All buildings |
 | GET | `/api/spaces/?location=&kind=&min_capacity=` | – | Active spaces, paginated |
 | GET | `/api/spaces/{id}/` | – | One space |
 | POST | `/api/spaces/` | manager | Add a room (visible to everyone at once) |
@@ -109,7 +109,7 @@ Errors are always `{"detail": "...", "code": "..."}` (e.g. `slot_unavailable` wi
 
 ## Run it
 
-### Option 1: quick start (SQLite, no Redis needed)
+### Option 1: quick start (SQLite)
 
 ```bash
 cd backend
@@ -128,7 +128,7 @@ bun install                     # Bun is the package manager (lockfile: bun.lock
 bun run dev                     # http://localhost:5173 (proxies /api to :8020)
 ```
 
-Without Redis, Celery tasks run inline and emails print to the backend console.
+In development, emails print to the backend console instead of being sent.
 
 ### Option 2: with your local PostgreSQL
 
@@ -141,14 +141,7 @@ Without Redis, Celery tasks run inline and emails print to the backend console.
    `DATABASE_URL=postgres://vaultdesk:vaultdesk@localhost:5432/vaultdesk`
 3. `python manage.py migrate && python manage.py seed_demo`, then run as above.
 
-### Option 3: everything in Docker
-
-```bash
-docker compose up --build
-```
-Open http://localhost:8080. This starts PostgreSQL, Redis, Django (gunicorn), a Celery worker and nginx
-serving React. Admin: http://localhost:8080/admin (create a user with
-`docker compose exec backend python manage.py createsuperuser`).
+Django admin: http://localhost:8020/admin (create a user with `python manage.py createsuperuser`).
 
 ### Tests
 
@@ -162,18 +155,17 @@ cd frontend && bun run test
 `.github/workflows/ci.yml` runs on every push and pull request:
 1. **backend:** system checks, `makemigrations --check` (fails if a model change has no migration), tests on PostgreSQL
 2. **frontend:** `bun install --frozen-lockfile`, tests, production build
-3. **docker:** builds all images
 
 ## Project structure
 
 ```
 backend/
-  config/            settings (env-driven), urls, celery, wsgi
+  config/            settings (env-driven), urls, wsgi
   apps/core/         shared base model, error types + DRF error handler, health check
   apps/accounts/     register / me (JWT via simplejwt)
   apps/spaces/       Location + Space models, selectors, API, seed_demo command
   apps/bookings/     Booking model, services (create/cancel/approve/reject), selectors, calendar stats,
-                     pricing, notifications, tasks, API, tests
+                     pricing, email notifications, API, tests
   apps/maintenance/  Issue model, selectors (out-of-service), services, API, tests
 frontend/src/
   api/               fetch client (JWT + shared refresh) and endpoint functions

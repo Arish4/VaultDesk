@@ -33,7 +33,7 @@ class BookingApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["total_price"], "400.00")
         self.assertEqual(response.data["space"]["id"], self.space.id)
-        # Celery runs eagerly in tests, so the email is "sent" to the in-memory outbox.
+        # In tests Django collects sent emails in mail.outbox instead of delivering them.
         self.assertTrue(any("Booking confirmed" in m.subject for m in mail.outbox))
 
     def test_double_booking_returns_409(self):

@@ -102,25 +102,7 @@ STORAGES = {
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ---------- Redis: cache + Celery broker ----------
-REDIS_URL = os.environ.get("REDIS_URL")
-
-CACHES = {
-    "default": (
-        {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}
-        if REDIS_URL
-        else {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
-    )
-}
-
-CELERY_BROKER_URL = REDIS_URL or "memory://"
-CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_ACKS_LATE = True
-# Without Redis, run tasks inline so the app still works on a laptop.
-CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", REDIS_URL is None)
-CELERY_TASK_EAGER_PROPAGATES = True
-
+# Emails print to the console in development; set EMAIL_BACKEND (+ SMTP settings) to really send them.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = "VaultDesk <bookings@vaultdesk.local>"
 
