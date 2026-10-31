@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "../stores/authStore";
 import { Button } from "../components/Button";
 import { Icon } from "../components/icons";
+import { LoginArt } from "../components/LoginArt";
 import { PasswordInput } from "../components/PasswordInput";
 import { readApiError } from "../utils/errors";
 
@@ -71,99 +72,109 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="auth">
-      <form className="panel auth__card" onSubmit={handleSubmit} noValidate>
-        <span className="auth__logo">
-          <Icon name="logo" size={30} strokeWidth={2.2} />
-        </span>
-        <h1>{isLogin ? "Welcome back" : "Create your account"}</h1>
-        <p className="muted">Book rooms, report issues and manage your workspace.</p>
+    <div className="login-root">
+      <div className="login-frame">
+        {/* FORM: right on desktop, a card over the art on phones */}
+        <div className="login-form-side">
+          <div className="login-form-body">
+            <form className="auth__card" onSubmit={handleSubmit} noValidate>
+              <h1>{isLogin ? "Welcome back!" : "Create your account"}</h1>
+              <p className="muted">
+                {isLogin ? "Log in to book rooms and manage your workspace." : "It takes a minute. You can book right after."}
+              </p>
 
-        <div className="segmented" role="tablist" aria-label="Log in or sign up">
-          <button type="button" role="tab" aria-selected={isLogin} className={isLogin ? "is-active" : ""} onClick={() => switchMode("login")}>
-            Log in
-          </button>
-          <button type="button" role="tab" aria-selected={!isLogin} className={!isLogin ? "is-active" : ""} onClick={() => switchMode("register")}>
-            Sign up
-          </button>
+              <div className="segmented" role="tablist" aria-label="Log in or sign up">
+                <button type="button" role="tab" aria-selected={isLogin} className={isLogin ? "is-active" : ""} onClick={() => switchMode("login")}>
+                  Log in
+                </button>
+                <button type="button" role="tab" aria-selected={!isLogin} className={!isLogin ? "is-active" : ""} onClick={() => switchMode("register")}>
+                  Sign up
+                </button>
+              </div>
+
+              <label className="field">
+                {isLogin ? "Username or email" : "Username"}
+                <span className="input-with-icon">
+                  <Icon name="user" size={18} className="input-with-icon__lead" />
+                  <input
+                    name="username"
+                    value={form.username}
+                    onChange={handleChange}
+                    autoComplete="username"
+                    autoFocus
+                    placeholder={isLogin ? "e.g. demo" : "Pick a username"}
+                    aria-invalid={Boolean(fields.username)}
+                  />
+                </span>
+                {fields.username && <span className="field__hint field__hint--error">{fields.username}</span>}
+              </label>
+
+              {!isLogin && (
+                <label className="field">
+                  Email
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    autoComplete="email"
+                    placeholder="you@company.com"
+                    aria-invalid={Boolean(fields.email)}
+                  />
+                  {fields.email && <span className="field__hint field__hint--error">{fields.email}</span>}
+                </label>
+              )}
+
+              <PasswordInput
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                autoComplete={isLogin ? "current-password" : "new-password"}
+                placeholder={isLogin ? "Your password" : "At least 8 characters"}
+                aria-invalid={Boolean(fields.password)}
+              />
+              {fields.password && <span className="field__hint field__hint--error">{fields.password}</span>}
+              {!isLogin && !fields.password && (
+                <span className="field__hint">At least 8 characters, not too common, not similar to your username.</span>
+              )}
+
+              {general && (
+                <p className="status status--error" role="alert">
+                  {general}
+                </p>
+              )}
+
+              <Button type="submit" loading={submitting} disabled={!canSubmit}>
+                {isLogin ? "Log in" : "Create account"}
+              </Button>
+
+              {isLogin && (
+                <div className="demo-logins">
+                  <span className="demo-logins__title">Just exploring? Use a demo account</span>
+                  <div className="demo-logins__buttons">
+                    {DEMO_ACCOUNTS.map((account) => (
+                      <button
+                        key={account.username}
+                        type="button"
+                        className="demo-login"
+                        disabled={submitting}
+                        onClick={() => signIn(account.username, DEMO_PASSWORD)}
+                      >
+                        <strong>{account.label}</strong>
+                        <span>{account.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </form>
+          </div>
+          <div className="login-form-footer">© 2026 VaultDesk</div>
         </div>
 
-        <label className="field">
-          {isLogin ? "Username or email" : "Username"}
-          <span className="input-with-icon">
-            <Icon name="user" size={18} className="input-with-icon__lead" />
-            <input
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              autoComplete="username"
-              autoFocus
-              placeholder={isLogin ? "e.g. demo" : "Pick a username"}
-              aria-invalid={Boolean(fields.username)}
-            />
-          </span>
-          {fields.username && <span className="field__hint field__hint--error">{fields.username}</span>}
-        </label>
-
-        {!isLogin && (
-          <label className="field">
-            Email
-            <input
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              autoComplete="email"
-              placeholder="you@company.com"
-              aria-invalid={Boolean(fields.email)}
-            />
-            {fields.email && <span className="field__hint field__hint--error">{fields.email}</span>}
-          </label>
-        )}
-
-        <PasswordInput
-          name="password"
-          value={form.password}
-          onChange={handleChange}
-          autoComplete={isLogin ? "current-password" : "new-password"}
-          placeholder={isLogin ? "Your password" : "At least 8 characters"}
-          aria-invalid={Boolean(fields.password)}
-        />
-        {fields.password && <span className="field__hint field__hint--error">{fields.password}</span>}
-        {!isLogin && !fields.password && (
-          <span className="field__hint">At least 8 characters, not too common, not similar to your username.</span>
-        )}
-
-        {general && (
-          <p className="status status--error" role="alert">
-            {general}
-          </p>
-        )}
-
-        <Button type="submit" loading={submitting} disabled={!canSubmit}>
-          {isLogin ? "Log in" : "Create account"}
-        </Button>
-
-        {isLogin && (
-          <div className="demo-logins">
-            <span className="demo-logins__title">Just exploring? Use a demo account</span>
-            <div className="demo-logins__buttons">
-              {DEMO_ACCOUNTS.map((account) => (
-                <button
-                  key={account.username}
-                  type="button"
-                  className="demo-login"
-                  disabled={submitting}
-                  onClick={() => signIn(account.username, DEMO_PASSWORD)}
-                >
-                  <strong>{account.label}</strong>
-                  <span>{account.hint}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </form>
+        {/* ART: left on desktop with a curved edge, a banner on top on phones */}
+        <LoginArt />
+      </div>
     </div>
   );
 }

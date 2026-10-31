@@ -299,10 +299,118 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue-100); 
 .status-select { padding: 7px 10px; font-size: 13px; }
 
 /* Auth */
-.auth { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-.auth__card { width: min(420px, 100%); display: flex; flex-direction: column; gap: 14px; }
-.auth__card h1 { font-size: 26px; }
-.auth__logo { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--blue-50); color: var(--blue); }
+/* ===================== Login: split screen, curved art on the left ===================== */
+.login-root { min-height: 100vh; min-height: 100dvh; display: flex; background: var(--surface); }
+.login-frame { display: flex; width: 100%; height: 100vh; height: 100dvh; min-height: 600px; overflow: hidden; }
+
+/* Form side (right on desktop). */
+.login-form-side {
+  position: relative; z-index: 2; order: 2; flex: 0 0 42%;
+  display: flex; flex-direction: column;
+  padding: clamp(24px, 4vh, 40px) clamp(24px, 4vw, 48px); background: var(--surface); overflow-y: auto;
+}
+.login-form-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.login-form-footer { display: none; font-size: 11px; color: #94a3b8; text-align: center; padding-top: 16px; }
+.auth__card { width: 100%; max-width: 380px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.auth__card h1 { font-size: 30px; letter-spacing: -0.5px; }
+
+/* Art side (left on desktop). */
+.login-art { position: relative; order: 1; flex: 1; overflow: hidden; background: var(--surface); }
+/* A circle much taller than the panel, anchored left: its right side is the curved edge. */
+.login-art__bg {
+  position: absolute; top: -22%; bottom: -22%; left: -45%; right: 0; border-radius: 50%;
+  background:
+    radial-gradient(60% 50% at 40% 45%, rgba(96, 165, 250, 0.55) 0%, transparent 70%),
+    linear-gradient(160deg, #3b82f6 0%, #2563eb 45%, #1e3a8a 100%);
+}
+.login-art__glow { position: absolute; border-radius: 50%; pointer-events: none; }
+.login-art__glow--1 { width: 340px; height: 340px; top: 18%; right: 30%; background: radial-gradient(circle, rgba(147, 197, 253, 0.45) 0%, transparent 65%); }
+.login-art__glow--2 { width: 280px; height: 280px; bottom: -40px; left: -40px; background: radial-gradient(circle, rgba(45, 212, 191, 0.3) 0%, transparent 65%); }
+.login-art__brand {
+  position: absolute; z-index: 3; top: clamp(20px, 4vh, 36px); left: clamp(20px, 3vw, 36px);
+  display: flex; align-items: center; gap: 10px; color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.3px;
+}
+.login-art__footer { position: absolute; z-index: 3; right: clamp(20px, 3vw, 36px); bottom: clamp(16px, 3vh, 28px); font-size: 11px; color: #94a3b8; }
+.login-art__center {
+  position: absolute; z-index: 2; inset: 0 8% 0 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; pointer-events: none;
+}
+.login-art__center > * { width: min(620px, 78%); }
+.login-art__headline { color: #fff; font-size: clamp(20px, 2.2vw, 28px); font-weight: 700; line-height: 1.25; letter-spacing: -0.3px; }
+
+/* Floating feature bubbles. */
+.login-bubble {
+  position: absolute; z-index: 1; display: grid; place-items: center; border-radius: 50%; color: #fff;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.25); animation: bubble-float 6s ease-in-out infinite;
+}
+.login-bubble::after { content: ""; position: absolute; inset: 6px 10px auto auto; width: 30%; height: 30%; border-radius: 50%; background: rgba(255, 255, 255, 0.35); filter: blur(2px); }
+.login-bubble--violet { background: radial-gradient(circle at 35% 30%, #c4b5fd, #8b5cf6 70%); }
+.login-bubble--sky { background: radial-gradient(circle at 35% 30%, #bae6fd, #0ea5e9 70%); }
+.login-bubble--amber { background: radial-gradient(circle at 35% 30%, #fde68a, #f59e0b 70%); }
+.login-bubble--rose { background: radial-gradient(circle at 35% 30%, #fecdd3, #f43f5e 70%); }
+.login-bubble--teal { background: radial-gradient(circle at 35% 30%, #99f6e4, #14b8a6 70%); }
+.login-bubble--orange { background: radial-gradient(circle at 35% 30%, #fdba74, #f97316 70%); }
+@keyframes bubble-float { 50% { transform: translateY(-12px); } }
+
+/* Snapshot of the room calendar. */
+/* Bottom padding keeps the overlapping "Next free" card below the last calendar row. */
+.snap { position: relative; padding: 34px 0 44px; -webkit-font-smoothing: antialiased; }
+.snap__main { padding: 22px 24px; border-radius: 22px; background: #fff; box-shadow: 0 30px 70px rgba(15, 23, 42, 0.3); }
+.snap__head { margin-bottom: 16px; }
+.snap__kicker { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.snap__kpi { margin-top: 4px; font-size: 26px; font-weight: 800; color: var(--ink); }
+.snap__delta { margin-left: 6px; font-size: 13px; font-weight: 700; color: var(--amber); }
+.snap__grid { display: flex; flex-direction: column; gap: 10px; }
+.snap__row { display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: 12px; }
+.snap__room { font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap; }
+.snap__track {
+  position: relative; height: 26px; border-radius: 8px; background-color: var(--surface-2);
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px); background-size: calc(100% / 6) 100%;
+}
+.snap__block { position: absolute; top: 4px; bottom: 4px; border-radius: 6px; }
+.snap__block--booked { background: var(--green-50); box-shadow: inset 3px 0 0 var(--green); }
+.snap__block--mine { background: var(--blue-100); box-shadow: inset 3px 0 0 var(--blue); }
+.snap__block--pending { background: var(--amber-50); box-shadow: inset 3px 0 0 var(--amber); }
+.snap__now { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--blue); }
+.snap__mini {
+  position: absolute; display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-radius: 16px; background: #fff; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+}
+.snap__mini--status { top: 0; right: -6%; }
+.snap__mini--free { bottom: 0; left: -6%; gap: 16px; }
+.snap__mini-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--green-50); color: var(--green); }
+.snap__mini-label { font-size: 12px; color: var(--muted); }
+.snap__mini-value { font-size: 13px; font-weight: 700; color: var(--ink); }
+.snap__mini-big { font-size: 18px; font-weight: 800; color: var(--ink); }
+.snap__pill { padding: 4px 10px; border-radius: 999px; background: var(--blue-50); color: var(--blue); font-size: 12px; font-weight: 700; }
+
+/* Phones: art becomes a banner on top, the form a card over it. */
+.login-mobile-hero { display: none; }
+@media (max-width: 900px) {
+  .login-frame { flex-direction: column; height: auto; min-height: 100dvh; overflow: visible; }
+  .login-art { order: 1; flex: 0 0 auto; height: 300px; }
+  .login-art__bg { inset: -40% -30% 0 -30%; border-radius: 0 0 50% 50%; }
+  .login-art__center, .login-art__footer { display: none; }
+  .login-bubble { scale: 0.62; }
+  .login-mobile-hero {
+    position: absolute; z-index: 2; inset: 76px 20px auto; display: flex; flex-direction: column; gap: 6px; color: #fff;
+  }
+  .login-mobile-hero__title { font-size: 22px; font-weight: 800; }
+  .login-mobile-hero__sub { font-size: 13px; opacity: 0.85; }
+  .login-mobile-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .login-mobile-stat { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.16); }
+  .login-mobile-stat strong { font-size: 18px; }
+  .login-mobile-stat span { font-size: 11px; opacity: 0.85; }
+  .login-form-side {
+    order: 2; flex: 1 0 auto; margin: -36px 12px 0; padding: 24px 18px;
+    border-radius: 24px 24px 0 0; box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.08); overflow: visible;
+  }
+  .login-form-body { justify-content: flex-start; }
+  .login-form-footer { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-bubble { animation: none; }
+}
 
 /* Inputs with an icon on the left and an optional button on the right (password eye). */
 .input-with-icon { position: relative; display: flex; align-items: center; }
