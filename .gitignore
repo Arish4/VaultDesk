@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3
+staticfiles/
+.env
+node_modules/
+dist/
+# Personal interview-prep notes, kept locally only
+docs/
