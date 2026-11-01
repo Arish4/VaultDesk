@@ -4,7 +4,7 @@ A facilities app for a coworking / campus operator: a live **room calendar** for
 no double-booking, **manager approvals** for big rooms, **maintenance** tickets that can take a room out of
 service, and email confirmations and decisions.
 
-**Stack:** Django 5 · Django REST Framework · JWT auth · PostgreSQL · React 18 (Vite) · Zustand · Bun ·
+**Stack:** Django 5 · Django REST Framework · JWT auth · PostgreSQL · React 18 + TypeScript (Vite) · Zustand · Bun ·
 GitHub Actions CI
 
 ---
@@ -38,7 +38,7 @@ GitHub Actions CI
 ## Architecture
 
 ```
-React (Vite)  ──/api──▶  Django + DRF  ──▶  PostgreSQL
+React (TS)    ──/api──▶  Django + DRF  ──▶  PostgreSQL
                               │
                               └──▶ email (after the database commit)
 ```
@@ -148,13 +148,14 @@ Django admin: http://localhost:8020/admin (create a user with `python manage.py 
 ```bash
 cd backend && python manage.py test
 cd frontend && bun run test
+cd frontend && bun run typecheck
 ```
 
 ## CI
 
 `.github/workflows/ci.yml` runs on every push and pull request:
 1. **backend:** system checks, `makemigrations --check` (fails if a model change has no migration), tests on PostgreSQL
-2. **frontend:** `bun install --frozen-lockfile`, tests, production build
+2. **frontend:** `bun install --frozen-lockfile`, tests, type check + production build (`tsc --noEmit && vite build`)
 
 ## Project structure
 
@@ -167,7 +168,8 @@ backend/
   apps/bookings/     Booking model, services (create/cancel/approve/reject), selectors, calendar stats,
                      pricing, email notifications, API, tests
   apps/maintenance/  Issue model, selectors (out-of-service), services, API, tests
-frontend/src/
+frontend/src/        TypeScript (strict): .ts for logic, .tsx for components
+  types.ts           shapes of every API response, matching the DRF serializers
   api/               fetch client (JWT + shared refresh) and endpoint functions
   stores/            Zustand stores: auth (session), summary (sidebar badges), ui (search) + tests
   auth/              ProtectedRoute (reads the auth store)
@@ -175,7 +177,7 @@ frontend/src/
   hooks/             useApi (fetch + cancel stale requests), useBuilding (state in the URL)
   components/        calendar/ (Timeline, StatCards, BookingDetails), Modal, BookingForm, SpaceCard, icons, ...
   pages/             Calendar, Rooms, RoomDetail, MyBookings, Maintenance, Approvals, Auth (lazy-loaded)
-  utils/             time.js and timeline.js: pure helpers with unit tests
+  utils/             time.ts and timeline.ts: pure helpers with unit tests
 ```
 
 ## AI usage
